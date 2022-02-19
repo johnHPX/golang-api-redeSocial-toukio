@@ -1,5 +1,5 @@
 package users
 
 type Service interface {
-	CreateUser(e *Entity) error
+	CreateUser(e *Entity, etapa string) error
 }

@@ -3,6 +3,7 @@ module API-RS-TOUKIO
 go 1.17
 
 require (
+	github.com/badoux/checkmail v1.2.1 // indirect
 	github.com/cpuguy83/go-md2man/v2 v2.0.0-20190314233015-f79a8a8ca69d // indirect
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect

@@ -42,7 +42,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		Password: entUserRequest.Password,
 	}
 
-	err = svc.CreateUser(ent)
+	err = svc.CreateUser(ent, "cadastro")
 	if err != nil {
 		response.Erro(w, http.StatusInternalServerError, err)
 		return
