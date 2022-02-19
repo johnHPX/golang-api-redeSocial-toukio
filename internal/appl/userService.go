@@ -11,13 +11,28 @@ import (
 
 type userServiceImpl struct{}
 
-func (p *userServiceImpl) CreateUser(e *users.Entity, etapa string) error {
+func (s *userServiceImpl) CreateUser(e *users.Entity, etapa string) error {
 	rep := pgclient.NewUserRepository()
 	err := prepare(e, etapa)
 	if err != nil {
 		return err
 	}
 	return rep.CreateUser(e)
+}
+
+func (s *userServiceImpl) ListALLUser() ([]users.Entity, error) {
+	rep := pgclient.NewUserRepository()
+	return rep.ListALLUser()
+}
+
+func (s *userServiceImpl) ListByNameOrNickUsers(NameOrNick string) ([]users.Entity, error) {
+	rep := pgclient.NewUserRepository()
+	return rep.ListByNameOrNickUsers(NameOrNick)
+}
+
+func (s *userServiceImpl) FindUser(id int64) (*users.Entity, error) {
+	rep := pgclient.NewUserRepository()
+	return rep.FindUser(id)
 }
 
 func NewUserService() users.Service {
