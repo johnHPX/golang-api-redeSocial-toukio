@@ -44,6 +44,11 @@ func (userImpl *userServiceImpl) UpdateUser(e *users.Entity) error {
 	return rep.UpdateUser(e)
 }
 
+func (userImpl *userServiceImpl) DeleteUser(id int64) error {
+	rep := pgclient.NewUserRepository()
+	return rep.DeleteUser(id)
+}
+
 func NewUserService() users.Service {
 	return &userServiceImpl{}
 }

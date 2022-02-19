@@ -6,5 +6,5 @@ type Repository interface {
 	ListByNameOrNickUsers(NameOrNick string) ([]Entity, error)
 	FindUser(id int64) (*Entity, error)
 	UpdateUser(e *Entity) error
-	// DeleteUser(id int64) error
+	DeleteUser(id int64) error
 }

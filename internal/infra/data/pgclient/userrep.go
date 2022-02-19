@@ -124,7 +124,6 @@ func (userImpl *userRepositoryImpl) ListByNameOrNickUsers(NameOrNick string) ([]
 	if err != nil {
 		return nil, err
 	}
-
 	defer db.Close()
 	// id, name, nick, email, create_at
 	sqlText := "select * from users where name like ? or nick like ?"
@@ -179,6 +178,7 @@ func (userImpl *userRepositoryImpl) UpdateUser(e *users.Entity) error {
 	if err != nil {
 		return err
 	}
+	defer db.Close()
 
 	sqlText := "update users set name = ?, nick = ?, email = ? where id = ?"
 	statement, err := db.Prepare(sqlText)
@@ -188,6 +188,28 @@ func (userImpl *userRepositoryImpl) UpdateUser(e *users.Entity) error {
 	defer statement.Close()
 
 	_, err = statement.Exec(e.Name, e.Nick, e.Email, e.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (userImpl *userRepositoryImpl) DeleteUser(id int64) error {
+	db, err := Connectar()
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
+	sqlText := "delete from users where id = ?"
+	statement, err := db.Prepare(sqlText)
+	if err != nil {
+		return nil
+	}
+	defer statement.Close()
+
+	_, err = statement.Exec(id)
 	if err != nil {
 		return err
 	}

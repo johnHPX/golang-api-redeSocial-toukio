@@ -35,4 +35,10 @@ var routerUsers = []Router{
 		Handler:           resource.UpdateUser,
 		ReqAuthentication: false,
 	},
+	{
+		Path:              "/users/delete/{userId}",
+		Method:            "DELETE",
+		Handler:           resource.DeletarUser,
+		ReqAuthentication: false,
+	},
 }

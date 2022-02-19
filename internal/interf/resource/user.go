@@ -239,3 +239,29 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	response.JSON(w, http.StatusAccepted, resp)
 }
+
+type deleteUserRequest struct {
+	ID int64 `json:"-"`
+}
+
+type deleteUserResponse struct {
+	MID string `json:"_mid"`
+}
+
+func DeletarUser(w http.ResponseWriter, r *http.Request) {
+	paraments := mux.Vars(r)
+	usuarioId, err := strconv.ParseInt(paraments["userId"], 10, 64)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	svc := appl.NewUserService()
+	err = svc.DeleteUser(usuarioId)
+	if err != nil {
+		response.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	response.JSON(w, http.StatusNoContent, nil)
+}
