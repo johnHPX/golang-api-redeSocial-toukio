@@ -29,4 +29,10 @@ var routerUsers = []Router{
 		Handler:           resource.FindUsers,
 		ReqAuthentication: false,
 	},
+	{
+		Path:              "/users/update/{userId}",
+		Method:            "PUT",
+		Handler:           resource.UpdateUser,
+		ReqAuthentication: false,
+	},
 }

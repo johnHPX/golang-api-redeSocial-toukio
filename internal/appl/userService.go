@@ -11,28 +11,37 @@ import (
 
 type userServiceImpl struct{}
 
-func (s *userServiceImpl) CreateUser(e *users.Entity, etapa string) error {
+func (userImpl *userServiceImpl) CreateUser(e *users.Entity) error {
 	rep := pgclient.NewUserRepository()
-	err := prepare(e, etapa)
+	err := prepare(e, "cadastro")
 	if err != nil {
 		return err
 	}
 	return rep.CreateUser(e)
 }
 
-func (s *userServiceImpl) ListALLUser() ([]users.Entity, error) {
+func (userImpl *userServiceImpl) ListALLUser() ([]users.Entity, error) {
 	rep := pgclient.NewUserRepository()
 	return rep.ListALLUser()
 }
 
-func (s *userServiceImpl) ListByNameOrNickUsers(NameOrNick string) ([]users.Entity, error) {
+func (userImpl *userServiceImpl) ListByNameOrNickUsers(NameOrNick string) ([]users.Entity, error) {
 	rep := pgclient.NewUserRepository()
 	return rep.ListByNameOrNickUsers(NameOrNick)
 }
 
-func (s *userServiceImpl) FindUser(id int64) (*users.Entity, error) {
+func (userImpl *userServiceImpl) FindUser(id int64) (*users.Entity, error) {
 	rep := pgclient.NewUserRepository()
 	return rep.FindUser(id)
+}
+
+func (userImpl *userServiceImpl) UpdateUser(e *users.Entity) error {
+	rep := pgclient.NewUserRepository()
+	err := prepare(e, "atualizar")
+	if err != nil {
+		return err
+	}
+	return rep.UpdateUser(e)
 }
 
 func NewUserService() users.Service {

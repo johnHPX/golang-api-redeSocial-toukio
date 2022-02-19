@@ -46,7 +46,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 		Password: request.Password,
 	}
 
-	err = svc.CreateUser(ent, "cadastro")
+	err = svc.CreateUser(ent)
 	if err != nil {
 		response.Erro(w, http.StatusInternalServerError, err)
 		return
@@ -186,4 +186,56 @@ func FindUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.JSON(w, http.StatusAccepted, u)
+}
+
+type updateUserRequest struct {
+	Name  string `json:"name"`
+	Nick  string `json:"nick"`
+	Email string `json:"email"`
+}
+
+type updateUserResponse struct {
+	MID string `json:"_mid"`
+}
+
+func UpdateUser(w http.ResponseWriter, r *http.Request) {
+	paraments := mux.Vars(r)
+	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	bodyRequest, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		response.Erro(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	var request updateUserRequest
+	err = json.Unmarshal(bodyRequest, &request)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	svc := appl.NewUserService()
+	ent := &users.Entity{
+		ID:    userID,
+		Name:  request.Name,
+		Nick:  request.Nick,
+		Email: request.Email,
+	}
+
+	err = svc.UpdateUser(ent)
+	if err != nil {
+		response.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp := &createUserResponse{
+		MID: "ok",
+	}
+
+	response.JSON(w, http.StatusAccepted, resp)
 }

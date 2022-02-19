@@ -90,15 +90,15 @@ func (userImpl *userRepositoryImpl) CreateUser(e *users.Entity) error {
 }
 
 func (userImpl *userRepositoryImpl) ListALLUser() ([]users.Entity, error) {
-	conn, err := Connectar()
+	db, err := Connectar()
 	if err != nil {
 		return nil, err
 	}
 
-	defer conn.Close()
+	defer db.Close()
 
 	sqlText := "select * from users"
-	rows, err := conn.Query(sqlText)
+	rows, err := db.Query(sqlText)
 	if err != nil {
 		return nil, err
 	}
@@ -120,15 +120,15 @@ func (userImpl *userRepositoryImpl) ListALLUser() ([]users.Entity, error) {
 }
 
 func (userImpl *userRepositoryImpl) ListByNameOrNickUsers(NameOrNick string) ([]users.Entity, error) {
-	conn, err := Connectar()
+	db, err := Connectar()
 	if err != nil {
 		return nil, err
 	}
 
-	defer conn.Close()
+	defer db.Close()
 	// id, name, nick, email, create_at
 	sqlText := "select * from users where name like ? or nick like ?"
-	rows, err := conn.Query(sqlText, NameOrNick, NameOrNick)
+	rows, err := db.Query(sqlText, NameOrNick, NameOrNick)
 	if err != nil {
 		return nil, err
 	}
@@ -150,15 +150,15 @@ func (userImpl *userRepositoryImpl) ListByNameOrNickUsers(NameOrNick string) ([]
 }
 
 func (userImpl *userRepositoryImpl) FindUser(id int64) (*users.Entity, error) {
-	conn, err := Connectar()
+	db, err := Connectar()
 	if err != nil {
 		return nil, err
 	}
 
-	defer conn.Close()
+	defer db.Close()
 
 	sqlText := "select * from users where id = ?"
-	row, err := conn.Query(sqlText, id)
+	row, err := db.Query(sqlText, id)
 
 	if err != nil {
 		return nil, err
@@ -172,6 +172,27 @@ func (userImpl *userRepositoryImpl) FindUser(id int64) (*users.Entity, error) {
 
 	return nil, errors.New("Usuário não foi encontrado!")
 
+}
+
+func (userImpl *userRepositoryImpl) UpdateUser(e *users.Entity) error {
+	db, err := Connectar()
+	if err != nil {
+		return err
+	}
+
+	sqlText := "update users set name = ?, nick = ?, email = ? where id = ?"
+	statement, err := db.Prepare(sqlText)
+	if err != nil {
+		return err
+	}
+	defer statement.Close()
+
+	_, err = statement.Exec(e.Name, e.Nick, e.Email, e.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func NewUserRepository() users.Repository {
