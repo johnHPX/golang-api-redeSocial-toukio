@@ -265,3 +265,89 @@ func DeletarUser(w http.ResponseWriter, r *http.Request) {
 
 	response.JSON(w, http.StatusNoContent, nil)
 }
+
+type loginUserRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+type loginUserResponse struct {
+	Token string `json:"token"`
+}
+
+func LoginUser(w http.ResponseWriter, r *http.Request) {
+	bodyRequest, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		response.Erro(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	var user users.Entity
+	err = json.Unmarshal(bodyRequest, &user)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	svc := appl.NewUserService()
+	userSalveBase, err := svc.SearchforEmail(user.Email)
+	if err != nil {
+		response.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	err = appl.CheckPassword(userSalveBase.Password, user.Password)
+	if err != nil {
+		response.Erro(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	token, err := appl.CreateToken(uint64(userSalveBase.ID))
+	if err != nil {
+		response.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	w.Write([]byte(token))
+
+}
+
+type seguirUserRequest struct {
+}
+
+type seguirUserResponse struct {
+}
+
+func SeguirUser(w http.ResponseWriter, r *http.Request) {
+
+}
+
+type pararSeguirUserRequest struct {
+}
+
+type pararSeguirUserUserResponse struct {
+}
+
+func PararSeguirUser(w http.ResponseWriter, r *http.Request) {
+
+}
+
+type listSeguidoresUserUserRequest struct {
+}
+
+type listSeguidoresUserUserUserResponse struct {
+}
+
+func ListSeguidoresUser(w http.ResponseWriter, r *http.Request) {
+
+}
+
+type listSeguindoUserUserRequest struct {
+}
+
+type listSeguindoUserUserUserResponse struct {
+}
+
+func ListSeguindoUser(w http.ResponseWriter, r *http.Request) {
+
+}

@@ -1,6 +1,7 @@
 package routers
 
 import (
+	"API-RS-TOUKIO/internal/appl"
 	"net/http"
 
 	"github.com/gorilla/mux"
@@ -9,7 +10,7 @@ import (
 type Router struct {
 	Path              string
 	Method            string
-	Handler           func(http.ResponseWriter, *http.Request)
+	Handler           http.HandlerFunc
 	ReqAuthentication bool
 }
 
@@ -17,7 +18,10 @@ func configurar(r *mux.Router) *mux.Router {
 	routers := routerUsers
 
 	for _, rota := range routers {
-		r.HandleFunc(rota.Path, rota.Handler).Methods(rota.Method)
+		if rota.ReqAuthentication {
+			r.HandleFunc(rota.Path, appl.Autenticar(rota.Handler)).Methods(rota.Method)
+		}
+		r.HandleFunc(rota.Path, appl.Loggar(rota.Handler)).Methods(rota.Method)
 	}
 
 	return r

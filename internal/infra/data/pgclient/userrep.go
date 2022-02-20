@@ -10,7 +10,7 @@ import (
 type userRepositoryImpl struct{}
 
 // scan -> Serve para verificar se os dados do request estão de acordo com os seus tipos da tabela users
-func (userImpl *userRepositoryImpl) scan(rows *sql.Rows) (*users.Entity, error) {
+func (userImpl *userRepositoryImpl) scan(tipo string, rows *sql.Rows) (*users.Entity, error) {
 	id := sql.NullInt64{}
 	name := sql.NullString{}
 	nick := sql.NullString{}
@@ -18,17 +18,34 @@ func (userImpl *userRepositoryImpl) scan(rows *sql.Rows) (*users.Entity, error) 
 	password := sql.NullString{}
 	create_at := sql.NullTime{}
 
-	err := rows.Scan(
-		&id,
-		&name,
-		&nick,
-		&email,
-		&password,
-		&create_at,
-	)
+	if tipo == "" {
+		return nil, errors.New("não foi definido o tipo de scan")
+	}
 
-	if err != nil {
-		return nil, err
+	if tipo == "login" {
+		err := rows.Scan(
+			&id,
+			&password,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if tipo == "listALL" {
+		err := rows.Scan(
+			&id,
+			&name,
+			&nick,
+			&email,
+			&password,
+			&create_at,
+		)
+
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	ent := new(users.Entity)
@@ -112,7 +129,7 @@ func (userImpl *userRepositoryImpl) ListALLUser() ([]users.Entity, error) {
 	result := make([]users.Entity, 0) //  slice da entidade
 
 	for rows.Next() { // percorre todos valores
-		ent, err := userImpl.scan(rows) // usa o scan  para verificar se os valores estão de acordo e retorna uma entidade populada
+		ent, err := userImpl.scan("listALL", rows) // usa o scan  para verificar se os valores estão de acordo e retorna uma entidade populada
 		if err != nil {
 			return nil, err
 		}
@@ -142,7 +159,7 @@ func (userImpl *userRepositoryImpl) ListByNameOrNickUsers(NameOrNick string) ([]
 	result := make([]users.Entity, 0)
 
 	for rows.Next() {
-		ent, err := userImpl.scan(rows)
+		ent, err := userImpl.scan("listALL", rows)
 		if err != nil {
 			return nil, err
 		}
@@ -172,7 +189,7 @@ func (userImpl *userRepositoryImpl) FindUser(id int64) (*users.Entity, error) {
 	defer row.Close()
 
 	if row.Next() { // não precisa percorrer com o fro, pois é apenas um usuario
-		return userImpl.scan(row) // verificar com o scan
+		return userImpl.scan("listALL", row) // verificar com o scan
 	}
 
 	return nil, errors.New("Usuário não foi encontrado!")
@@ -223,6 +240,28 @@ func (userImpl *userRepositoryImpl) DeleteUser(id int64) error {
 	}
 
 	return nil
+}
+
+func (userImpl *userRepositoryImpl) SearchforEmail(email string) (*users.Entity, error) {
+	db, err := Connectar()
+	if err != nil {
+		return nil, err
+	}
+	defer db.Close()
+
+	sqlText := "select id, password from users where email = ?"
+
+	row, err := db.Query(sqlText, email)
+	if err != nil {
+		return nil, err
+	}
+
+	if row.Next() {
+		return userImpl.scan("login", row)
+	}
+
+	return nil, errors.New("Email não foi encontrado!")
+
 }
 
 // função reponsavel por Retornar todos os metodos do repositorio de users

@@ -1,6 +1,8 @@
 package configs
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 	"os"
@@ -17,6 +19,18 @@ type MysqlDB struct {
 }
 
 var port = 0 // porta do servidor, inicialmente está com o valor zero
+var SecretKey []byte
+
+func init() {
+	chave := make([]byte, 64)
+
+	if _, erro := rand.Read(chave); erro != nil {
+		log.Fatal(erro)
+	}
+
+	stringBase64 := base64.StdEncoding.EncodeToString(chave)
+	SecretKey = []byte(stringBase64)
+}
 
 // Load -> vai configurar a string de endereço do mysql e irá definir a porta do servidor,
 // os valores vão ser coletados do arquivo ".env",

@@ -50,6 +50,11 @@ func (userImpl *userServiceImpl) DeleteUser(id int64) error {
 	return rep.DeleteUser(id)
 }
 
+func (userImpl *userServiceImpl) SearchforEmail(email string) (*users.Entity, error) {
+	rep := pgclient.NewUserRepository()
+	return rep.SearchforEmail(email)
+}
+
 // retorna todos os metodos
 func NewUserService() users.Service {
 	return &userServiceImpl{}
@@ -99,14 +104,14 @@ func formatar(ent *users.Entity, etapa string) error {
 	ent.Nick = strings.TrimSpace(ent.Nick)
 	ent.Email = strings.TrimSpace(ent.Email)
 
-	// if etapa == "cadastro" {
-	// 	senhaComHash, erro := seguranca.Hash(usuario.Senha)
-	// 	if erro != nil {
-	// 		return erro
-	// 	}
+	if etapa == "cadastro" {
+		senhaComHash, erro := Hash(ent.Password)
+		if erro != nil {
+			return erro
+		}
 
-	// 	usuario.Senha = string(senhaComHash)
-	// }
+		ent.Password = string(senhaComHash)
+	}
 
 	return nil
 }
