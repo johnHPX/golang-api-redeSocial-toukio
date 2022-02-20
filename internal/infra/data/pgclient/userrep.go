@@ -6,9 +6,11 @@ import (
 	"errors"
 )
 
+// objeto que vai servi para a implementação dos metodos do repositorio de users
 type userRepositoryImpl struct{}
 
-func (userImpl *userRepositoryImpl) scanIterator(rows *sql.Rows) (*users.Entity, error) {
+// scan -> Serve para verificar se os dados do request estão de acordo com os seus tipos da tabela users
+func (userImpl *userRepositoryImpl) scan(rows *sql.Rows) (*users.Entity, error) {
 	id := sql.NullInt64{}
 	name := sql.NullString{}
 	nick := sql.NullString{}
@@ -58,37 +60,39 @@ func (userImpl *userRepositoryImpl) scanIterator(rows *sql.Rows) (*users.Entity,
 
 }
 
+// CreateUser -> metodo de criar um usuario, executando o comando sql de criação de dados
 func (userImpl *userRepositoryImpl) CreateUser(e *users.Entity) error {
-	db, err := Connectar()
+	db, err := Connectar() // abre a conexão
 	if err != nil {
-		return err
+		return err //trata o erro
 	}
-	defer db.Close()
+	defer db.Close() // fecha a conexão por ultimo
 
-	sqlText := "insert into users (name,nick,email,password) values (?,?,?,?)"
-	statement, err := db.Prepare(sqlText)
+	sqlText := "insert into users (name,nick,email,password) values (?,?,?,?)" // comanddo sql
+	statement, err := db.Prepare(sqlText)                                      // prepara um statement para a execução do sql
 	if err != nil {
-		return err
+		return err // trata o erro
 	}
-	defer statement.Close()
+	defer statement.Close() //fecha o statemant por ultimo
 
-	result, err := statement.Exec(e.Name, e.Nick, e.Email, e.Password)
+	result, err := statement.Exec(e.Name, e.Nick, e.Email, e.Password) // executa o sql e retorna os resultados
 	if err != nil {
-		return err
+		return err //trata o erro
 	}
 
-	rows, err := result.RowsAffected()
+	rows, err := result.RowsAffected() // retorna o numero de linhas afetadas
 	if err != nil {
-		return err
+		return err // trata o erro
 	}
 
-	if rows != 1 {
-		return errors.New("erro ao cadastrar usuarios")
+	if rows != 1 { // verifica se tem linhas afetadas
+		return errors.New("erro ao cadastrar usuarios") // não tem linhas afetadas, logo não foi possivel criar usuario
 	}
 
-	return nil
+	return nil // retorna nil se tudo ocorreu bem
 }
 
+// ListALLUser -> lista todos os usuarios cadastrados , exectutando o comando sql de listar dados
 func (userImpl *userRepositoryImpl) ListALLUser() ([]users.Entity, error) {
 	db, err := Connectar()
 	if err != nil {
@@ -98,27 +102,28 @@ func (userImpl *userRepositoryImpl) ListALLUser() ([]users.Entity, error) {
 	defer db.Close()
 
 	sqlText := "select * from users"
-	rows, err := db.Query(sqlText)
+	rows, err := db.Query(sqlText) // Consulta o banco de dados, e retorna um array com os valores encontrados pelo sql
 	if err != nil {
 		return nil, err
 	}
 
 	defer rows.Close()
 
-	result := make([]users.Entity, 0)
+	result := make([]users.Entity, 0) //  slice da entidade
 
-	for rows.Next() {
-		ent, err := userImpl.scanIterator(rows)
+	for rows.Next() { // percorre todos valores
+		ent, err := userImpl.scan(rows) // usa o scan  para verificar se os valores estão de acordo e retorna uma entidade populada
 		if err != nil {
 			return nil, err
 		}
 
-		result = append(result, *ent)
+		result = append(result, *ent) // adiciona a entidade populada no slice de entidades
 	}
 
-	return result, nil
+	return result, nil // retorna o slice de entidades populado
 }
 
+// ListByNameOrNick -> faz uma listagem de usuarios com o nome ou o nick
 func (userImpl *userRepositoryImpl) ListByNameOrNickUsers(NameOrNick string) ([]users.Entity, error) {
 	db, err := Connectar()
 	if err != nil {
@@ -126,8 +131,8 @@ func (userImpl *userRepositoryImpl) ListByNameOrNickUsers(NameOrNick string) ([]
 	}
 	defer db.Close()
 	// id, name, nick, email, create_at
-	sqlText := "select * from users where name like ? or nick like ?"
-	rows, err := db.Query(sqlText, NameOrNick, NameOrNick)
+	sqlText := "select * from users where name like ? or nick like ?" // cada "?" representa um valor a ser adiconado
+	rows, err := db.Query(sqlText, NameOrNick)                        // atibuindo valor ao "?", e retornado os valores
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +142,7 @@ func (userImpl *userRepositoryImpl) ListByNameOrNickUsers(NameOrNick string) ([]
 	result := make([]users.Entity, 0)
 
 	for rows.Next() {
-		ent, err := userImpl.scanIterator(rows)
+		ent, err := userImpl.scan(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -148,6 +153,7 @@ func (userImpl *userRepositoryImpl) ListByNameOrNickUsers(NameOrNick string) ([]
 	return result, nil
 }
 
+// FindUser -> busca um unico usuario, através do id
 func (userImpl *userRepositoryImpl) FindUser(id int64) (*users.Entity, error) {
 	db, err := Connectar()
 	if err != nil {
@@ -165,14 +171,15 @@ func (userImpl *userRepositoryImpl) FindUser(id int64) (*users.Entity, error) {
 
 	defer row.Close()
 
-	if row.Next() {
-		return userImpl.scanIterator(row)
+	if row.Next() { // não precisa percorrer com o fro, pois é apenas um usuario
+		return userImpl.scan(row) // verificar com o scan
 	}
 
 	return nil, errors.New("Usuário não foi encontrado!")
 
 }
 
+// UpdateUser -> atualiza dados de um usuario
 func (userImpl *userRepositoryImpl) UpdateUser(e *users.Entity) error {
 	db, err := Connectar()
 	if err != nil {
@@ -195,6 +202,7 @@ func (userImpl *userRepositoryImpl) UpdateUser(e *users.Entity) error {
 	return nil
 }
 
+// DeletarUser -> deleta um usuario
 func (userImpl *userRepositoryImpl) DeleteUser(id int64) error {
 	db, err := Connectar()
 	if err != nil {
@@ -217,6 +225,7 @@ func (userImpl *userRepositoryImpl) DeleteUser(id int64) error {
 	return nil
 }
 
+// função reponsavel por Retornar todos os metodos do repositorio de users
 func NewUserRepository() users.Repository {
 	return &userRepositoryImpl{}
 }

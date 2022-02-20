@@ -17,7 +17,6 @@ func configurar(r *mux.Router) *mux.Router {
 	routers := routerUsers
 
 	for _, rota := range routers {
-
 		r.HandleFunc(rota.Path, rota.Handler).Methods(rota.Method)
 	}
 

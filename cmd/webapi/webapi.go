@@ -9,8 +9,8 @@ import (
 )
 
 func main() {
-	_, port := configs.Load()
-	r := routers.Generate()
+	_, port := configs.Load() // pegando a porta do servidor
+	r := routers.Generate()   // gerando as rotas da API
 
 	fmt.Printf("Escutando na porta %d", port)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), r))

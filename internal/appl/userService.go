@@ -9,6 +9,7 @@ import (
 	"github.com/badoux/checkmail"
 )
 
+// serve para implementar os metodos do service de users
 type userServiceImpl struct{}
 
 func (userImpl *userServiceImpl) CreateUser(e *users.Entity) error {
@@ -49,6 +50,7 @@ func (userImpl *userServiceImpl) DeleteUser(id int64) error {
 	return rep.DeleteUser(id)
 }
 
+// retorna todos os metodos
 func NewUserService() users.Service {
 	return &userServiceImpl{}
 }
@@ -65,6 +67,7 @@ func prepare(ent *users.Entity, etapa string) error {
 	return nil
 }
 
+// valida os campos do request
 func validate(ent *users.Entity, etapa string) error {
 	if ent.Name == "" {
 		return errors.New("O nome é obrigatório e não pode está em branco")
@@ -90,6 +93,7 @@ func validate(ent *users.Entity, etapa string) error {
 	return nil
 }
 
+// Retira os espaços em branco e verificar se há um email valido
 func formatar(ent *users.Entity, etapa string) error {
 	ent.Name = strings.TrimSpace(ent.Name)
 	ent.Nick = strings.TrimSpace(ent.Nick)

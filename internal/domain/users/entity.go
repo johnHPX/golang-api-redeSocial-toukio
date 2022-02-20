@@ -2,6 +2,7 @@ package users
 
 import "time"
 
+// entidade de usuarios
 type Entity struct {
 	ID        int64
 	Name      string

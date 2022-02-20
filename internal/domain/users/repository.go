@@ -1,5 +1,6 @@
 package users
 
+// funções a serem implementadas, no pacote pgclient
 type Repository interface {
 	CreateUser(e *Entity) error
 	ListALLUser() ([]Entity, error)

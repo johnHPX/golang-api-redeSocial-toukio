@@ -1,5 +1,6 @@
 package users
 
+// funções a serem implementadas no pacote appl
 type Service interface {
 	CreateUser(e *Entity) error
 	ListALLUser() ([]Entity, error)
