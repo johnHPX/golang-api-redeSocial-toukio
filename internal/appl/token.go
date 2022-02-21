@@ -38,7 +38,7 @@ func validateToken(r *http.Request) error {
 }
 
 // ExtractUsuarioID retorna o usuarioId que está salvo no token
-func ExtractUsuarioID(r *http.Request) (uint64, error) {
+func ExtractUsuarioID(r *http.Request) (int64, error) {
 	tokenString := ExtractToken(r)
 	fmt.Println(tokenString)
 	token, erro := jwt.Parse(tokenString, returnCheckKey)
@@ -47,7 +47,7 @@ func ExtractUsuarioID(r *http.Request) (uint64, error) {
 	}
 
 	if permissions, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		userID, erro := strconv.ParseUint(fmt.Sprintf("%.0f", permissions["usuariosId"]), 10, 64)
+		userID, erro := strconv.ParseInt(fmt.Sprintf("%.0f", permissions["usuariosId"]), 10, 64)
 		if erro != nil {
 			return 0, erro
 		}
@@ -58,10 +58,11 @@ func ExtractUsuarioID(r *http.Request) (uint64, error) {
 	return 0, errors.New("Token inválido")
 }
 
+// pega o valor do token
 func ExtractToken(r *http.Request) string {
 	token := r.Header.Get("Authorization")
 
-	// Bearer asdlkdjsakl
+	// Bearer asdlkdjsakl -> asdlkdjsakl
 
 	if len(strings.Split(token, " ")) == 2 {
 		return strings.Split(token, " ")[1]
@@ -70,6 +71,7 @@ func ExtractToken(r *http.Request) string {
 	return ""
 }
 
+// retorna a chave de verificação
 func returnCheckKey(token *jwt.Token) (interface{}, error) {
 	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 		return nil, fmt.Errorf("Método de assinatura inesperado! %v", token.Header["alg"])

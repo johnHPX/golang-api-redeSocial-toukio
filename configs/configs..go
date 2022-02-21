@@ -18,9 +18,10 @@ type MysqlDB struct {
 	DB_Name     string //nome do banco
 }
 
-var port = 0 // porta do servidor, inicialmente está com o valor zero
-var SecretKey []byte
+var port = 0         // porta do servidor, inicialmente está com o valor zero
+var SecretKey []byte // chave secreta, que será gerada pela api
 
+// gera um valor para SecretKey, que será usada para ssinar o token
 func init() {
 	chave := make([]byte, 64)
 

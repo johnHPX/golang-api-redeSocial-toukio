@@ -22,6 +22,7 @@ func (userImpl *userRepositoryImpl) scan(tipo string, rows *sql.Rows) (*users.En
 		return nil, errors.New("não foi definido o tipo de scan")
 	}
 
+	// para rota de login
 	if tipo == "login" {
 		err := rows.Scan(
 			&id,
@@ -32,7 +33,7 @@ func (userImpl *userRepositoryImpl) scan(tipo string, rows *sql.Rows) (*users.En
 			return nil, err
 		}
 	}
-
+	// para rota de listarALL
 	if tipo == "listALL" {
 		err := rows.Scan(
 			&id,
@@ -40,6 +41,20 @@ func (userImpl *userRepositoryImpl) scan(tipo string, rows *sql.Rows) (*users.En
 			&nick,
 			&email,
 			&password,
+			&create_at,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+	// para outras rotas de listar
+	if tipo == "outersList" {
+		err := rows.Scan(
+			&id,
+			&name,
+			&nick,
+			&email,
 			&create_at,
 		)
 
@@ -148,8 +163,9 @@ func (userImpl *userRepositoryImpl) ListByNameOrNickUsers(NameOrNick string) ([]
 	}
 	defer db.Close()
 	// id, name, nick, email, create_at
-	sqlText := "select * from users where name like ? or nick like ?" // cada "?" representa um valor a ser adiconado
-	rows, err := db.Query(sqlText, NameOrNick)                        // atibuindo valor ao "?", e retornado os valores
+	// cada "?" representa um valor a ser adiconado
+	sqlText := "select id, name, nick, email, create_at from users where name like ? or nick like ?"
+	rows, err := db.Query(sqlText, NameOrNick, NameOrNick) // atibuindo valor ao "?", e retornado os valores
 	if err != nil {
 		return nil, err
 	}
@@ -159,7 +175,7 @@ func (userImpl *userRepositoryImpl) ListByNameOrNickUsers(NameOrNick string) ([]
 	result := make([]users.Entity, 0)
 
 	for rows.Next() {
-		ent, err := userImpl.scan("listALL", rows)
+		ent, err := userImpl.scan("outersList", rows)
 		if err != nil {
 			return nil, err
 		}
@@ -179,7 +195,7 @@ func (userImpl *userRepositoryImpl) FindUser(id int64) (*users.Entity, error) {
 
 	defer db.Close()
 
-	sqlText := "select * from users where id = ?"
+	sqlText := "select id, name, nick, email, create_at from users where id = ?"
 	row, err := db.Query(sqlText, id)
 
 	if err != nil {
@@ -188,8 +204,8 @@ func (userImpl *userRepositoryImpl) FindUser(id int64) (*users.Entity, error) {
 
 	defer row.Close()
 
-	if row.Next() { // não precisa percorrer com o fro, pois é apenas um usuario
-		return userImpl.scan("listALL", row) // verificar com o scan
+	if row.Next() { // não precisa percorrer com o for, pois é apenas um usuario
+		return userImpl.scan("otherlists", row) // verificar com o scan
 	}
 
 	return nil, errors.New("Usuário não foi encontrado!")
@@ -242,6 +258,7 @@ func (userImpl *userRepositoryImpl) DeleteUser(id int64) error {
 	return nil
 }
 
+// busca uma senha de um usuario salvo no banco atraves do seu email
 func (userImpl *userRepositoryImpl) SearchforEmail(email string) (*users.Entity, error) {
 	db, err := Connectar()
 	if err != nil {
@@ -262,6 +279,159 @@ func (userImpl *userRepositoryImpl) SearchforEmail(email string) (*users.Entity,
 
 	return nil, errors.New("Email não foi encontrado!")
 
+}
+
+// Permite que um usuario siga o outro
+func (userImpl *userRepositoryImpl) FollowUser(userID, followerID int64) error {
+	db, err := Connectar()
+	if err != nil {
+		return nil
+	}
+
+	sqlText := "INSERT IGNORE INTO followers(user_id, follower_id) VALUES (?,?)"
+	statement, err := db.Prepare(sqlText)
+	if err != nil {
+		return err
+	}
+
+	defer statement.Close()
+
+	_, err = statement.Exec(userID, followerID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// permite que um usuario pare de seguir outro
+func (userImpl *userRepositoryImpl) StopFollowing(userID, followerID int64) error {
+	db, err := Connectar()
+	if err != nil {
+		return nil
+	}
+
+	sqlText := "DELETE FROM followers WHERE user_id = ? AND follower_id = ?"
+
+	statement, err := db.Prepare(sqlText)
+	if err != nil {
+		return err
+	}
+
+	defer statement.Close()
+
+	_, err = statement.Exec(userID, followerID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// traz todos os seguidores de um usuario
+func (userImpl *userRepositoryImpl) SearchFollowers(userID int64) ([]users.Entity, error) {
+	db, err := Connectar()
+	if err != nil {
+		return nil, err
+	}
+
+	sqlText := "select u.id, u.name, u.nick, u.email, u.create_at from users u inner join followers s on u.id = s.follower_id where s.user_id = ?"
+
+	rows, err := db.Query(sqlText, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var result []users.Entity
+	for rows.Next() {
+		ent, err := userImpl.scan("outersList", rows)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, *ent)
+	}
+
+	return result, nil
+}
+
+// traz todos os usuarios de um determinado usuario está seguindo
+func (userImpl *userRepositoryImpl) SearchFollowing(userID int64) ([]users.Entity, error) {
+	db, err := Connectar()
+	if err != nil {
+		return nil, err
+	}
+
+	sqlText := "select u.id, u.name, u.nick, u.email, u.create_at from users u inner join followers s on u.id = s.user_id where s.follower_id = ?"
+
+	rows, err := db.Query(sqlText, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	var result []users.Entity
+	for rows.Next() {
+		ent, err := userImpl.scan("outersList", rows)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, *ent)
+	}
+
+	return result, nil
+}
+
+func (userImpl *userRepositoryImpl) SearchPassword(userID int64) (string, error) {
+	db, err := Connectar()
+	if err != nil {
+		return "", nil
+	}
+
+	sqlText := "select password from users where id = ?"
+
+	rows, err := db.Query(sqlText, userID)
+	if err != nil {
+		return "", nil
+	}
+
+	defer rows.Close()
+
+	var user users.Entity
+	for rows.Next() {
+		err := rows.Scan(&user.Password)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return user.Password, nil
+}
+
+func (userImpl *userRepositoryImpl) UpdatePassword(userID int64, password string) error {
+	db, err := Connectar()
+	if err != nil {
+		return err
+	}
+
+	sqlText := "update users set password = ? where id = ?"
+	statement, err := db.Prepare(sqlText)
+	if err != nil {
+		return err
+	}
+
+	defer statement.Close()
+
+	_, err = statement.Exec(password, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // função reponsavel por Retornar todos os metodos do repositorio de users

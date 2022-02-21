@@ -55,12 +55,42 @@ func (userImpl *userServiceImpl) SearchforEmail(email string) (*users.Entity, er
 	return rep.SearchforEmail(email)
 }
 
+func (userImpl *userServiceImpl) FollowUser(userID, followerID int64) error {
+	rep := pgclient.NewUserRepository()
+	return rep.FollowUser(userID, followerID)
+}
+
+func (userImpl *userServiceImpl) StopFollowing(userID, followerID int64) error {
+	rep := pgclient.NewUserRepository()
+	return rep.StopFollowing(userID, followerID)
+}
+
+func (userImpl *userServiceImpl) SearchFollowers(userID int64) ([]users.Entity, error) {
+	rep := pgclient.NewUserRepository()
+	return rep.SearchFollowers(userID)
+}
+
+func (userImpl *userServiceImpl) SearchFollowing(userID int64) ([]users.Entity, error) {
+	rep := pgclient.NewUserRepository()
+	return rep.SearchFollowing(userID)
+}
+
+func (userImpl *userServiceImpl) SearchPassword(userID int64) (string, error) {
+	rep := pgclient.NewUserRepository()
+	return rep.SearchPassword(userID)
+}
+
+func (userImpl *userServiceImpl) UpdatePassword(userID int64, password string) error {
+	rep := pgclient.NewUserRepository()
+	return rep.UpdatePassword(userID, password)
+}
+
 // retorna todos os metodos
 func NewUserService() users.Service {
 	return &userServiceImpl{}
 }
 
-// Preparar vai chamar os métodos para validar e formatar o usuário recebido
+// vai chamar os métodos para validar e formatar o usuário recebido
 func prepare(ent *users.Entity, etapa string) error {
 	if erro := validate(ent, etapa); erro != nil {
 		return erro
@@ -104,13 +134,14 @@ func formatar(ent *users.Entity, etapa string) error {
 	ent.Nick = strings.TrimSpace(ent.Nick)
 	ent.Email = strings.TrimSpace(ent.Email)
 
+	// verifica se a requisição é um cadastro de usuario
 	if etapa == "cadastro" {
-		senhaComHash, erro := Hash(ent.Password)
+		senhaComHash, erro := Hash(ent.Password) // criar uma senha com hash
 		if erro != nil {
 			return erro
 		}
 
-		ent.Password = string(senhaComHash)
+		ent.Password = string(senhaComHash) //adiciona ao entidade do response, uma senha com hash
 	}
 
 	return nil

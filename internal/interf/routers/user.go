@@ -71,4 +71,16 @@ var routerUsers = []Router{
 		Handler:           resource.ListSeguindoUser,
 		ReqAuthentication: true,
 	},
+	{
+		Path:              "/users/seguindo/{userId}",
+		Method:            "GET",
+		Handler:           resource.ListSeguindoUser,
+		ReqAuthentication: true,
+	},
+	{
+		Path:              "/users/update-password/{userId}",
+		Method:            "POST",
+		Handler:           resource.UpdatePasswordUser,
+		ReqAuthentication: true,
+	},
 }

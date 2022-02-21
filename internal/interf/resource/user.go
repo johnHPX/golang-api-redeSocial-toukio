@@ -5,13 +5,22 @@ import (
 	"API-RS-TOUKIO/internal/domain/users"
 	"API-RS-TOUKIO/internal/infra/data/response"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gorilla/mux"
 )
+
+/*
+============================
+== CREATE USER =============
+============================
+*/
 
 type createUserRequest struct {
 	Name     string `json:"name"`
@@ -24,6 +33,7 @@ type createUserResponse struct {
 	MID string `json:"_mid"`
 }
 
+// cria um usuario
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -59,8 +69,13 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusAccepted, entUserResponse)
 }
 
+/*
+============================
+== LISTALL USER ============
+============================
+*/
+
 type listAllUsersRequest struct {
-	MID string `json:"_mid"`
 }
 
 type listAllUsersResponse struct {
@@ -73,10 +88,6 @@ type listAllUsersResponse struct {
 }
 
 func ListAllUsers(w http.ResponseWriter, r *http.Request) {
-
-	request := listAllUsersRequest{
-		MID: "ok",
-	}
 
 	svc := appl.NewUserService()
 	list, err := svc.ListALLUser()
@@ -93,39 +104,40 @@ func ListAllUsers(w http.ResponseWriter, r *http.Request) {
 			Nick:     v.Nick,
 			Email:    v.Email,
 			Password: v.Password,
-			MID:      request.MID,
+			MID:      "ok",
 		})
 	}
 
 	response.JSON(w, http.StatusAccepted, result)
 }
 
+/*
+============================
+== LISTBYNAMEORNICK USER ===
+============================
+*/
+
 type listByNameOrNickUsersRequest struct {
-	Name string `json:"-"`
-	Nick string `json:"-"`
-	MID  string `json:"_mid"`
+	NameOrNick string `json:"-"`
 }
 
 type listByNameOrNickUsersResponse struct {
-	ID       int64  `json:"id"`
-	Name     string `json:"name"`
-	Nick     string `json:"nick"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	MID      string `json:"_mid"`
+	ID    int64  `json:"id"`
+	Name  string `json:"name"`
+	Nick  string `json:"nick"`
+	Email string `json:"email"`
+	MID   string `json:"mid"`
 }
 
+// lista todos os usuarios pelo nome ou nick
 func ListByNameOrNickUsers(w http.ResponseWriter, r *http.Request) {
+	var request listByNameOrNickUsersRequest
 	nameOrNick := strings.ToLower(r.URL.Query().Get("user"))
 
-	request := listByNameOrNickUsersRequest{
-		Name: nameOrNick,
-		Nick: nameOrNick,
-		MID:  "ok",
-	}
+	request.NameOrNick = nameOrNick
 
 	svc := appl.NewUserService()
-	list, err := svc.ListByNameOrNickUsers(request.Name)
+	list, err := svc.ListByNameOrNickUsers(request.NameOrNick)
 	if err != nil {
 		response.Erro(w, http.StatusInternalServerError, err)
 		return
@@ -134,31 +146,37 @@ func ListByNameOrNickUsers(w http.ResponseWriter, r *http.Request) {
 	result := make([]listByNameOrNickUsersResponse, 0)
 	for _, v := range list {
 		result = append(result, listByNameOrNickUsersResponse{
-			ID:       v.ID,
-			Name:     v.Name,
-			Nick:     v.Nick,
-			Email:    v.Email,
-			Password: v.Password,
-			MID:      request.MID,
+			ID:    v.ID,
+			Name:  v.Name,
+			Nick:  v.Nick,
+			Email: v.Email,
+			MID:   "ok",
 		})
 	}
 
 	response.JSON(w, http.StatusAccepted, result)
 }
 
+/*
+============================
+== FIND USER =============
+============================
+*/
+
 type findUsersRequest struct {
 	ID int64 `json:"-"`
 }
 
 type findUsersResponse struct {
-	Name     string `json:"name"`
-	Nick     string `json:"nick"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	MID      string `json:"_mid"`
+	Name  string `json:"name"`
+	Nick  string `json:"nick"`
+	Email string `json:"email"`
+	MID   string `json:"_mid"`
 }
 
+// traz um usuario atraves do id
 func FindUsers(w http.ResponseWriter, r *http.Request) {
+
 	paraments := mux.Vars(r)
 	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
@@ -166,27 +184,28 @@ func FindUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	request := findUsersRequest{
-		ID: userID,
-	}
-
 	svc := appl.NewUserService()
-	user, err := svc.FindUser(request.ID)
+	user, err := svc.FindUser(userID)
 	if err != nil {
 		response.Erro(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	u := findUsersResponse{
-		Name:     user.Name,
-		Nick:     user.Nick,
-		Email:    user.Email,
-		Password: user.Password,
-		MID:      "ok",
+	resp := findUsersResponse{
+		Name:  user.Name,
+		Nick:  user.Nick,
+		Email: user.Email,
+		MID:   "ok",
 	}
 
-	response.JSON(w, http.StatusAccepted, u)
+	response.JSON(w, http.StatusAccepted, resp)
 }
+
+/*
+============================
+== UPDATE USER =============
+============================
+*/
 
 type updateUserRequest struct {
 	Name  string `json:"name"`
@@ -195,17 +214,10 @@ type updateUserRequest struct {
 }
 
 type updateUserResponse struct {
-	MID string `json:"_mid"`
+	MID string `json:"mid"`
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	paraments := mux.Vars(r)
-	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
-	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
-		return
-	}
-
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		response.Erro(w, http.StatusUnprocessableEntity, err)
@@ -214,6 +226,13 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	var request updateUserRequest
 	err = json.Unmarshal(bodyRequest, &request)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	paraments := mux.Vars(r)
+	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
 		response.Erro(w, http.StatusBadRequest, err)
 		return
@@ -240,6 +259,12 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	response.JSON(w, http.StatusAccepted, resp)
 }
 
+/*
+============================
+== DELETE USER =============
+============================
+*/
+
 type deleteUserRequest struct {
 	ID int64 `json:"-"`
 }
@@ -249,6 +274,7 @@ type deleteUserResponse struct {
 }
 
 func DeletarUser(w http.ResponseWriter, r *http.Request) {
+
 	paraments := mux.Vars(r)
 	usuarioId, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
@@ -263,8 +289,18 @@ func DeletarUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.JSON(w, http.StatusNoContent, nil)
+	resp := &deleteUserResponse{
+		MID: "ok",
+	}
+
+	response.JSON(w, http.StatusOK, resp)
 }
+
+/*
+============================
+== LOGIN USER ==============
+============================
+*/
 
 type loginUserRequest struct {
 	Email    string `json:"email"`
@@ -272,9 +308,9 @@ type loginUserRequest struct {
 }
 
 type loginUserResponse struct {
-	Token string `json:"token"`
 }
 
+// faz login com um usuario cadastrado
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -282,7 +318,7 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user users.Entity
+	var user loginUserRequest
 	err = json.Unmarshal(bodyRequest, &user)
 	if err != nil {
 		response.Erro(w, http.StatusBadRequest, err)
@@ -308,46 +344,306 @@ func LoginUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// resp := &loginUserResponse{
+	// 	Token: []byte(token),
+	// }
+
 	w.Write([]byte(token))
 
 }
 
+/*
+============================
+== SEGUIR USER =============
+============================
+*/
+
 type seguirUserRequest struct {
+	MID string `json:"mid"`
 }
 
 type seguirUserResponse struct {
+	MID string `json:"mid"`
 }
 
+// uma vez logado, pode seguir um outro usuario
 func SeguirUser(w http.ResponseWriter, r *http.Request) {
 
+	bodyRequest, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		response.Erro(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	var user seguirUserRequest
+	err = json.Unmarshal(bodyRequest, &user)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	paramentros := mux.Vars(r)
+	userID, err := strconv.ParseInt(paramentros["userId"], 10, 64)
+	if err != nil {
+		response.Erro(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	follewerID, err := appl.ExtractUsuarioID(r)
+	if err != nil {
+		response.Erro(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	if follewerID == userID {
+		response.Erro(w, http.StatusForbidden, errors.New("não é posivel seguir você mesmo"))
+		return
+	}
+
+	svc := appl.NewUserService()
+	err = svc.FollowUser(userID, follewerID)
+	if err != nil {
+		response.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp := &seguirUserResponse{
+		MID: "ok",
+	}
+
+	response.JSON(w, http.StatusOK, resp.MID)
 }
 
+/*
+============================
+== PARARSEGUIR USER ========
+============================
+*/
+
 type pararSeguirUserRequest struct {
+	MID string `json:"_mid"`
 }
 
 type pararSeguirUserUserResponse struct {
+	MID string `json:"_mid"`
 }
 
+// uma vez logado, serve para parar de seguir um usuario
 func PararSeguirUser(w http.ResponseWriter, r *http.Request) {
 
+	bodyRequest, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		response.Erro(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	var user pararSeguirUserRequest
+	err = json.Unmarshal(bodyRequest, &user)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	paramentros := mux.Vars(r)
+	userID, err := strconv.ParseInt(paramentros["userId"], 10, 64)
+	if err != nil {
+		response.Erro(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	follewerID, err := appl.ExtractUsuarioID(r)
+	if err != nil {
+		response.Erro(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	if follewerID == userID {
+		response.Erro(w, http.StatusForbidden, errors.New("não é posivel parar de seguir você mesmo"))
+		return
+	}
+
+	svc := appl.NewUserService()
+	err = svc.StopFollowing(userID, follewerID)
+	if err != nil {
+		response.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp := &pararSeguirUserUserResponse{
+		MID: "ok",
+	}
+
+	response.JSON(w, http.StatusOK, resp.MID)
 }
 
-type listSeguidoresUserUserRequest struct {
+/*
+============================
+== LISTSEGUIDOR USER =======
+============================
+*/
+
+type listSeguidoresUserRequest struct {
 }
 
-type listSeguidoresUserUserUserResponse struct {
+type listSeguidoresUserResponse struct {
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Nick      string    `json:"nick"`
+	Email     string    `json:"email"`
+	Create_at time.Time `json:"create_at"`
 }
 
+// uma vez logado, lista todos os seguidores de um usuario
 func ListSeguidoresUser(w http.ResponseWriter, r *http.Request) {
 
+	paraments := mux.Vars(r)
+	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+	svc := appl.NewUserService()
+	followers, err := svc.SearchFollowers(userID)
+
+	result := make([]listSeguidoresUserResponse, 0)
+	for _, v := range followers {
+		result = append(result, listSeguidoresUserResponse{
+			ID:        v.ID,
+			Name:      v.Name,
+			Nick:      v.Nick,
+			Email:     v.Email,
+			Create_at: v.Create_at,
+		})
+	}
+
+	response.JSON(w, http.StatusAccepted, result)
 }
 
-type listSeguindoUserUserRequest struct {
+/*
+============================
+== LISTSEGUINDO USER =======
+============================
+*/
+
+type listSeguindoUserRequest struct {
 }
 
-type listSeguindoUserUserUserResponse struct {
+type listSeguindoUserResponse struct {
+	ID        int64     `json:"id"`
+	Name      string    `json:"name"`
+	Nick      string    `json:"nick"`
+	Email     string    `json:"email"`
+	Create_at time.Time `json:"create_at"`
+	MID       string    `json:"mid"`
 }
 
+// uma vez logado, lista todas as usuarios que o usuario está seguindo
 func ListSeguindoUser(w http.ResponseWriter, r *http.Request) {
+
+	paraments := mux.Vars(r)
+	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+	svc := appl.NewUserService()
+	followers, err := svc.SearchFollowing(userID)
+
+	result := make([]listSeguindoUserResponse, 0)
+	for _, v := range followers {
+		result = append(result, listSeguindoUserResponse{
+			ID:        v.ID,
+			Name:      v.Name,
+			Nick:      v.Nick,
+			Email:     v.Email,
+			Create_at: v.Create_at,
+			MID:       "ok",
+		})
+	}
+
+	response.JSON(w, http.StatusAccepted, result)
+}
+
+/*
+============================
+== UPDATEPASSWORD USER =====
+============================
+*/
+
+type updatepasswordUserRequest struct {
+	NewPassword     string `json:"new"`
+	CurrentPassword string `json:"current"`
+}
+
+type updatepasswordUserResponse struct {
+	MID string `json:"mid"`
+}
+
+// atualiza a senha de usuario
+func UpdatePasswordUser(w http.ResponseWriter, r *http.Request) {
+	bodyRequest, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		response.Erro(w, http.StatusUnprocessableEntity, err)
+		return
+	}
+
+	var password updatepasswordUserRequest
+	err = json.Unmarshal(bodyRequest, &password)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	paraments := mux.Vars(r)
+	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
+	if err != nil {
+		response.Erro(w, http.StatusBadRequest, err)
+		return
+	}
+
+	userIDToken, err := appl.ExtractUsuarioID(r)
+	if err != nil {
+		response.Erro(w, http.StatusUnauthorized, err)
+		return
+	}
+
+	if userID == userIDToken {
+		response.Erro(w, http.StatusForbidden, errors.New("Não é possivel atualizar uma senha o que não é o sua"))
+		return
+	}
+
+	svc := appl.NewUserService()
+	passwordSalveBD, err := svc.SearchPassword(userID)
+	if err != nil {
+		response.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	fmt.Println("Atual: ->", password.CurrentPassword)
+	fmt.Println("SenhaSalvaNoBanco ->", passwordSalveBD)
+
+	err = appl.CheckPassword(passwordSalveBD, password.CurrentPassword)
+	if err != nil {
+		response.Erro(w, http.StatusUnauthorized, errors.New("a senha atual não condiz com aque está salva no banco"))
+		return
+	}
+
+	passwordWithHash, err := appl.Hash(password.NewPassword)
+	if err != nil {
+		response.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	err = svc.UpdatePassword(userID, string(passwordWithHash))
+	if err != nil {
+		response.Erro(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	resp := &updatepasswordUserResponse{
+		MID: "ok",
+	}
+
+	response.JSON(w, http.StatusOK, resp)
 
 }
