@@ -29,23 +29,18 @@ func gerarAPP() *cli.App {
 
 	app.Commands = []cli.Command{
 		{
-			Name:   "up",
-			Usage:  "Criar tebelas",
+			Name:   "migrate",
+			Usage:  "Criar tebelas/deleta tabelas",
 			Flags:  flag,
-			Action: migrationUP,
-		},
-		{
-			Name:   "down",
-			Usage:  "deleta tabelas",
-			Flags:  flag,
-			Action: migrationDown,
+			Action: migration,
 		},
 	}
 
 	return app
 }
 
-func migrationUP(c *cli.Context) {
+// função que executa o up
+func migration(c *cli.Context) {
 	valorPassado := c.String("m")
 
 	content, err := ioutil.ReadFile("migrations/" + valorPassado)
@@ -64,16 +59,16 @@ func migrationUP(c *cli.Context) {
 
 	fmt.Print(">>>>>>>>")
 
-	_, err = db.Exec(text)
+	statement, err := db.Prepare(text)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	_, err = statement.Exec()
+
 	fmt.Print("migration executed successfully!")
 
 }
-
-func migrationDown(c *cli.Context) {}
 
 func main() {
 	aplicação := gerarAPP()

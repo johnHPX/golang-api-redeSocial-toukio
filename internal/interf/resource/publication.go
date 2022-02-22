@@ -93,7 +93,7 @@ func CreatePublication(w http.ResponseWriter, r *http.Request) {
 */
 
 type listALLPublicationRequest struct {
-	MID string `json:"mid"`
+	MID string `json:"-"`
 }
 type listALLPublicationResponse struct {
 	ID         int64     `json:"id"`
@@ -107,24 +107,25 @@ type listALLPublicationResponse struct {
 }
 
 func ListAllPublication(w http.ResponseWriter, r *http.Request) {
+	mid := strings.ToLower(r.URL.Query().Get("mid"))
 	userID, err := appl.ExtractUsuarioID(r)
 	if err != nil {
 		response.Erro(w, http.StatusUnauthorized, err)
 		return
 	}
 
-	bodyRequest, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		response.Erro(w, http.StatusUnprocessableEntity, err)
-		return
-	}
+	// bodyRequest, err := ioutil.ReadAll(r.Body)
+	// if err != nil {
+	// 	response.Erro(w, http.StatusUnprocessableEntity, err)
+	// 	return
+	// }
 
-	var publicationRequest listALLPublicationRequest
-	err = json.Unmarshal(bodyRequest, &publicationRequest)
-	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
-		return
-	}
+	// var publicationRequest listALLPublicationRequest
+	// err = json.Unmarshal(bodyRequest, &publicationRequest)
+	// if err != nil {
+	// 	response.Erro(w, http.StatusInternalServerError, err)
+	// 	return
+	// }
 
 	svc := appl.NewPublicationService()
 	publications, err := svc.ListAllPublication(userID)
@@ -143,7 +144,7 @@ func ListAllPublication(w http.ResponseWriter, r *http.Request) {
 			AuthorNick: v.AuthorNick,
 			Likes:      v.Likes,
 			Create_at:  v.Create_at,
-			MID:        publicationRequest.MID,
+			MID:        mid,
 		})
 	}
 

@@ -386,6 +386,7 @@ func (userImpl *userRepositoryImpl) SearchFollowing(userID int64) ([]users.Entit
 	return result, nil
 }
 
+// retorna uma senha de usuario já cadastrada no banco
 func (userImpl *userRepositoryImpl) SearchPassword(userID int64) (string, error) {
 	db, err := Connectar()
 	if err != nil {

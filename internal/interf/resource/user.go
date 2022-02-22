@@ -27,10 +27,11 @@ type createUserRequest struct {
 	Nick     string `json:"nick"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	MID      string `json:"mid"`
 }
 
 type createUserResponse struct {
-	MID string `json:"_mid"`
+	MID string `json:"mid"`
 }
 
 // cria um usuario
@@ -63,7 +64,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	entUserResponse := &createUserResponse{
-		MID: "ok",
+		MID: request.MID,
 	}
 
 	response.JSON(w, http.StatusAccepted, entUserResponse)
@@ -76,6 +77,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 */
 
 type listAllUsersRequest struct {
+	MID string `json:"-"`
 }
 
 type listAllUsersResponse struct {
@@ -84,10 +86,11 @@ type listAllUsersResponse struct {
 	Nick     string `json:"nick"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	MID      string `json:"_mid"`
+	MID      string `json:"mid"`
 }
 
 func ListAllUsers(w http.ResponseWriter, r *http.Request) {
+	mid := strings.ToLower(r.URL.Query().Get("mid"))
 
 	svc := appl.NewUserService()
 	list, err := svc.ListALLUser()
@@ -104,7 +107,7 @@ func ListAllUsers(w http.ResponseWriter, r *http.Request) {
 			Nick:     v.Nick,
 			Email:    v.Email,
 			Password: v.Password,
-			MID:      "ok",
+			MID:      mid,
 		})
 	}
 
@@ -119,6 +122,7 @@ func ListAllUsers(w http.ResponseWriter, r *http.Request) {
 
 type listByNameOrNickUsersRequest struct {
 	NameOrNick string `json:"-"`
+	MID        string `json:"-"`
 }
 
 type listByNameOrNickUsersResponse struct {
@@ -131,6 +135,7 @@ type listByNameOrNickUsersResponse struct {
 
 // lista todos os usuarios pelo nome ou nick
 func ListByNameOrNickUsers(w http.ResponseWriter, r *http.Request) {
+	mid := strings.ToLower(r.URL.Query().Get("mid"))
 	var request listByNameOrNickUsersRequest
 	nameOrNick := strings.ToLower(r.URL.Query().Get("user"))
 
@@ -150,7 +155,7 @@ func ListByNameOrNickUsers(w http.ResponseWriter, r *http.Request) {
 			Name:  v.Name,
 			Nick:  v.Nick,
 			Email: v.Email,
-			MID:   "ok",
+			MID:   mid,
 		})
 	}
 
@@ -164,19 +169,20 @@ func ListByNameOrNickUsers(w http.ResponseWriter, r *http.Request) {
 */
 
 type findUsersRequest struct {
-	ID int64 `json:"-"`
+	ID  int64  `json:"-"`
+	MID string `json:"-"`
 }
 
 type findUsersResponse struct {
 	Name  string `json:"name"`
 	Nick  string `json:"nick"`
 	Email string `json:"email"`
-	MID   string `json:"_mid"`
+	MID   string `json:"mid"`
 }
 
 // traz um usuario atraves do id
 func FindUsers(w http.ResponseWriter, r *http.Request) {
-
+	mid := strings.ToLower(r.URL.Query().Get("mid"))
 	paraments := mux.Vars(r)
 	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
@@ -197,7 +203,7 @@ func FindUsers(w http.ResponseWriter, r *http.Request) {
 		Name:  user.Name,
 		Nick:  user.Nick,
 		Email: user.Email,
-		MID:   "ok",
+		MID:   mid,
 	}
 
 	response.JSON(w, http.StatusAccepted, resp)
@@ -213,6 +219,7 @@ type updateUserRequest struct {
 	Name  string `json:"name"`
 	Nick  string `json:"nick"`
 	Email string `json:"email"`
+	MID   string `json:"mid"`
 }
 
 type updateUserResponse struct {
@@ -268,14 +275,16 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 */
 
 type deleteUserRequest struct {
-	ID int64 `json:"-"`
+	ID  int64  `json:"-"`
+	MID string `json:"-"`
 }
 
 type deleteUserResponse struct {
-	MID string `json:"_mid"`
+	MID string `json:"mid"`
 }
 
 func DeletarUser(w http.ResponseWriter, r *http.Request) {
+	mid := strings.ToLower(r.URL.Query().Get("mid"))
 
 	paraments := mux.Vars(r)
 	usuarioId, err := strconv.ParseInt(paraments["userId"], 10, 64)
@@ -292,7 +301,7 @@ func DeletarUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := &deleteUserResponse{
-		MID: "ok",
+		MID: mid,
 	}
 
 	response.JSON(w, http.StatusOK, resp)
@@ -423,11 +432,11 @@ func SeguirUser(w http.ResponseWriter, r *http.Request) {
 */
 
 type pararSeguirUserRequest struct {
-	MID string `json:"_mid"`
+	MID string `json:"mid"`
 }
 
 type pararSeguirUserUserResponse struct {
-	MID string `json:"_mid"`
+	MID string `json:"mid"`
 }
 
 // uma vez logado, serve para parar de seguir um usuario
@@ -485,6 +494,7 @@ func PararSeguirUser(w http.ResponseWriter, r *http.Request) {
 */
 
 type listSeguidoresUserRequest struct {
+	MID string `json:"-"`
 }
 
 type listSeguidoresUserResponse struct {
@@ -493,11 +503,12 @@ type listSeguidoresUserResponse struct {
 	Nick      string    `json:"nick"`
 	Email     string    `json:"email"`
 	Create_at time.Time `json:"create_at"`
+	MID       string    `json:"mid"`
 }
 
 // uma vez logado, lista todos os seguidores de um usuario
 func ListSeguidoresUser(w http.ResponseWriter, r *http.Request) {
-
+	mid := strings.ToLower(r.URL.Query().Get("mid"))
 	paraments := mux.Vars(r)
 	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
@@ -515,6 +526,7 @@ func ListSeguidoresUser(w http.ResponseWriter, r *http.Request) {
 			Nick:      v.Nick,
 			Email:     v.Email,
 			Create_at: v.Create_at,
+			MID:       mid,
 		})
 	}
 
@@ -528,6 +540,7 @@ func ListSeguidoresUser(w http.ResponseWriter, r *http.Request) {
 */
 
 type listSeguindoUserRequest struct {
+	MID string `json:"-"`
 }
 
 type listSeguindoUserResponse struct {
@@ -541,7 +554,7 @@ type listSeguindoUserResponse struct {
 
 // uma vez logado, lista todas as usuarios que o usuario está seguindo
 func ListSeguindoUser(w http.ResponseWriter, r *http.Request) {
-
+	mid := strings.ToLower(r.URL.Query().Get("mid"))
 	paraments := mux.Vars(r)
 	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
@@ -559,7 +572,7 @@ func ListSeguindoUser(w http.ResponseWriter, r *http.Request) {
 			Nick:      v.Nick,
 			Email:     v.Email,
 			Create_at: v.Create_at,
-			MID:       "ok",
+			MID:       mid,
 		})
 	}
 
@@ -575,6 +588,7 @@ func ListSeguindoUser(w http.ResponseWriter, r *http.Request) {
 type updatepasswordUserRequest struct {
 	NewPassword     string `json:"new"`
 	CurrentPassword string `json:"current"`
+	MID             string `json:"mid"`
 }
 
 type updatepasswordUserResponse struct {
@@ -646,7 +660,7 @@ func UpdatePasswordUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := &updatepasswordUserResponse{
-		MID: "ok",
+		MID: password.MID,
 	}
 
 	response.JSON(w, http.StatusOK, resp)

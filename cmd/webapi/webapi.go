@@ -13,6 +13,6 @@ func main() {
 	r := routers.Generate()   // gerando as rotas da API
 
 	fmt.Printf("Escutando na porta %d", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), r))
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), r)) //inciando o servidor
 
 }

@@ -21,7 +21,7 @@ func configurar(r *mux.Router) *mux.Router {
 
 	for _, rota := range routers {
 		if rota.ReqAuthentication {
-			r.HandleFunc(rota.Path, appl.Autenticar(rota.Handler)).Methods(rota.Method)
+			r.HandleFunc(rota.Path, appl.Loggar(appl.Autenticar(rota.Handler))).Methods(rota.Method)
 		}
 		r.HandleFunc(rota.Path, appl.Loggar(rota.Handler)).Methods(rota.Method)
 	}
