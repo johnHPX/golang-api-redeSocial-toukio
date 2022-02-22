@@ -205,7 +205,7 @@ func (userImpl *userRepositoryImpl) FindUser(id int64) (*users.Entity, error) {
 	defer row.Close()
 
 	if row.Next() { // não precisa percorrer com o for, pois é apenas um usuario
-		return userImpl.scan("otherlists", row) // verificar com o scan
+		return userImpl.scan("outersList", row) // verificar com o scan
 	}
 
 	return nil, errors.New("Usuário não foi encontrado!")

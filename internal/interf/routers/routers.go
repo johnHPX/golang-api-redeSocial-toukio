@@ -14,8 +14,10 @@ type Router struct {
 	ReqAuthentication bool
 }
 
+// configura as rotas que precisam de autenticação com o token e as que não
 func configurar(r *mux.Router) *mux.Router {
 	routers := routerUsers
+	routers = append(routers, routerPublication...)
 
 	for _, rota := range routers {
 		if rota.ReqAuthentication {
@@ -27,6 +29,7 @@ func configurar(r *mux.Router) *mux.Router {
 	return r
 }
 
+// gera as rotas
 func Generate() *mux.Router {
 	r := mux.NewRouter()
 	return configurar(r)

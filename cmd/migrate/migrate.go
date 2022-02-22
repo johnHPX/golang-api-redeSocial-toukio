@@ -1,8 +1,14 @@
 package main
 
+/*
+	AINDA TA EM PERIODO DE TESTE! NÃO ESTÁ FUNCIONANDO AINDA
+
+*/
+
 import (
-	"bufio"
+	"API-RS-TOUKIO/internal/infra/data/pgclient"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -24,7 +30,7 @@ func gerarAPP() *cli.App {
 	app.Commands = []cli.Command{
 		{
 			Name:   "up",
-			Usage:  "Cria tebelas",
+			Usage:  "Criar tebelas",
 			Flags:  flag,
 			Action: migrationUP,
 		},
@@ -40,21 +46,30 @@ func gerarAPP() *cli.App {
 }
 
 func migrationUP(c *cli.Context) {
-	valorPassado := c.String("migration")
-	fmt.Println(valorPassado)
-	readFile, err := os.Open(fmt.Sprintf(".../.../migrations/%s", valorPassado))
+	valorPassado := c.String("m")
 
+	content, err := ioutil.ReadFile("migrations/" + valorPassado)
 	if err != nil {
-		fmt.Println(err)
+		log.Fatal(err)
 	}
 
-	fileScanner := bufio.NewScanner(readFile)
-	fileScanner.Split(bufio.ScanLines)
+	// Convert []byte to string and print to screen
+	text := string(content)
+	fmt.Println(text)
 
-	for fileScanner.Scan() {
-		fmt.Println(fileScanner.Text())
+	db, err := pgclient.Connectar()
+	if err != nil {
+		log.Fatal(err)
 	}
-	readFile.Close()
+
+	fmt.Print(">>>>>>>>")
+
+	_, err = db.Exec(text)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Print("migration executed successfully!")
 
 }
 

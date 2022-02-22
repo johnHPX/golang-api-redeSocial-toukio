@@ -191,7 +191,9 @@ func FindUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := findUsersResponse{
+	fmt.Println(user)
+
+	resp := &findUsersResponse{
 		Name:  user.Name,
 		Nick:  user.Nick,
 		Email: user.Email,
@@ -607,7 +609,10 @@ func UpdatePasswordUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if userID == userIDToken {
+	fmt.Println(userID)
+	fmt.Println(userIDToken)
+
+	if userID != userIDToken {
 		response.Erro(w, http.StatusForbidden, errors.New("Não é possivel atualizar uma senha o que não é o sua"))
 		return
 	}
