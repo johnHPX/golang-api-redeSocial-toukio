@@ -8,9 +8,5 @@ type Repository interface {
 	FindByIDPublication(publicationID int64) (*Entity, error)
 	UpdatePublication(publicationID int64, e *Entity) error
 	DeletePublication(publicationID int64) error
-
-	// publication function
 	ListByIDUserPublication(userID int64) ([]Entity, error)
-	LikePublication(publicationID int64) error
-	DeslikePublication(publicationID int64) error
 }

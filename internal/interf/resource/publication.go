@@ -39,22 +39,22 @@ type createPublicationResponse struct {
 
 // cria uma publicação
 func CreatePublication(w http.ResponseWriter, r *http.Request) {
-	userID, err := appl.ExtractUsuarioID(r)
+	userID, err := appl.ExtractUserID(r)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, err)
+		response.Err(w, http.StatusUnauthorized, err)
 		return
 	}
 
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		response.Erro(w, http.StatusUnprocessableEntity, err)
+		response.Err(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	var publicationRequest createPublicationRequest
 	err = json.Unmarshal(bodyRequest, &publicationRequest)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -67,7 +67,7 @@ func CreatePublication(w http.ResponseWriter, r *http.Request) {
 	svc := appl.NewPublicationService()
 	ent.ID, err = svc.CreatePublication(ent)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -108,29 +108,20 @@ type listALLPublicationResponse struct {
 
 func ListAllPublication(w http.ResponseWriter, r *http.Request) {
 	mid := strings.ToLower(r.URL.Query().Get("mid"))
-	userID, err := appl.ExtractUsuarioID(r)
+	userID, err := appl.ExtractUserID(r)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, err)
+		response.Err(w, http.StatusUnauthorized, err)
 		return
 	}
 
-	// bodyRequest, err := ioutil.ReadAll(r.Body)
-	// if err != nil {
-	// 	response.Erro(w, http.StatusUnprocessableEntity, err)
-	// 	return
-	// }
-
-	// var publicationRequest listALLPublicationRequest
-	// err = json.Unmarshal(bodyRequest, &publicationRequest)
-	// if err != nil {
-	// 	response.Erro(w, http.StatusInternalServerError, err)
-	// 	return
-	// }
+	request := &listALLPublicationRequest{
+		MID: mid,
+	}
 
 	svc := appl.NewPublicationService()
 	publications, err := svc.ListAllPublication(userID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -144,7 +135,7 @@ func ListAllPublication(w http.ResponseWriter, r *http.Request) {
 			AuthorNick: v.AuthorNick,
 			Likes:      v.Likes,
 			Create_at:  v.Create_at,
-			MID:        mid,
+			MID:        request.MID,
 		})
 	}
 
@@ -177,14 +168,18 @@ func FindByIDPublication(w http.ResponseWriter, r *http.Request) {
 	paraments := mux.Vars(r)
 	publicationID, err := strconv.ParseInt(paraments["publicationID"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
+	}
+
+	request := &findByIDPublicationRequest{
+		MID: mid,
 	}
 
 	svc := appl.NewPublicationService()
 	publication, err := svc.FindByIDPublication(publicationID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -196,7 +191,7 @@ func FindByIDPublication(w http.ResponseWriter, r *http.Request) {
 		AuthorNick: publication.AuthorNick,
 		Likes:      publication.Likes,
 		Create_at:  publication.Create_at,
-		MID:        mid,
+		MID:        request.MID,
 	}
 
 	response.JSON(w, http.StatusAccepted, resp)
@@ -218,41 +213,41 @@ type updatePublicationResponse struct {
 }
 
 func UpdatePublication(w http.ResponseWriter, r *http.Request) {
-	userID, err := appl.ExtractUsuarioID(r)
+	userID, err := appl.ExtractUserID(r)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, err)
+		response.Err(w, http.StatusUnauthorized, err)
 		return
 	}
 
 	paraments := mux.Vars(r)
 	publicationID, err := strconv.ParseInt(paraments["publicationID"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
 	svc := appl.NewPublicationService()
 	publictionSaveInBD, err := svc.FindByIDPublication(publicationID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if publictionSaveInBD.AuthorID != userID {
-		response.Erro(w, http.StatusForbidden, errors.New("Não é possivel atualizar uma publicação que não seja sua"))
+		response.Err(w, http.StatusForbidden, errors.New("não é possivel atualizar uma publicação que não seja sua"))
 		return
 	}
 
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		response.Erro(w, http.StatusUnprocessableEntity, err)
+		response.Err(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	var publicationRequest updatePublicationRequest
 	err = json.Unmarshal(bodyRequest, &publicationRequest)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -263,7 +258,7 @@ func UpdatePublication(w http.ResponseWriter, r *http.Request) {
 
 	err = svc.UpdatePublication(publicationID, pub)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -289,39 +284,43 @@ type deletePublicationResponse struct {
 
 func DeletePublication(w http.ResponseWriter, r *http.Request) {
 	mid := strings.ToLower(r.URL.Query().Get("mid"))
-	userID, err := appl.ExtractUsuarioID(r)
+	userID, err := appl.ExtractUserID(r)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, err)
+		response.Err(w, http.StatusUnauthorized, err)
 		return
+	}
+
+	request := &deletePublicationRequest{
+		MID: mid,
 	}
 
 	paraments := mux.Vars(r)
 	publicationID, err := strconv.ParseInt(paraments["publicationID"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
 	svc := appl.NewPublicationService()
 	publictionSaveInBD, err := svc.FindByIDPublication(publicationID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	if publictionSaveInBD.AuthorID != userID {
-		response.Erro(w, http.StatusForbidden, errors.New("Não é possivel Deletar uma publicação que não seja sua"))
+		response.Err(w, http.StatusForbidden, errors.New("não é possivel Deletar uma publicação que não seja sua"))
 		return
 	}
 
 	err = svc.DeletePublication(publicationID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	pubReponse := &deletePublicationResponse{
-		MID: mid,
+		MID: request.MID,
 	}
 
 	response.JSON(w, http.StatusOK, pubReponse)
@@ -352,14 +351,18 @@ func ListByIDUserPublication(w http.ResponseWriter, r *http.Request) {
 	paraments := mux.Vars(r)
 	userID, err := strconv.ParseInt(paraments["userID"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
+	}
+
+	request := &listByIDUserPublicationRequest{
+		MID: mid,
 	}
 
 	svc := appl.NewPublicationService()
 	publications, err := svc.ListByIDUserPublication(userID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -373,7 +376,7 @@ func ListByIDUserPublication(w http.ResponseWriter, r *http.Request) {
 			AuthorNick: v.AuthorNick,
 			Likes:      v.Likes,
 			Create_at:  v.Create_at,
-			MID:        mid,
+			MID:        request.MID,
 		})
 	}
 
@@ -398,19 +401,23 @@ func LikePublication(w http.ResponseWriter, r *http.Request) {
 	paraments := mux.Vars(r)
 	publicationID, err := strconv.ParseInt(paraments["publicationID"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	request := likePublicationRequest{
+		MID: mid,
 	}
 
 	svc := appl.NewPublicationService()
 	err = svc.LikePublication(publicationID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	e := &likePublicationResponse{
-		MID: mid,
+		MID: request.MID,
 	}
 
 	response.JSON(w, http.StatusOK, e)
@@ -434,19 +441,23 @@ func DeslikePublication(w http.ResponseWriter, r *http.Request) {
 	paraments := mux.Vars(r)
 	publicationID, err := strconv.ParseInt(paraments["publicationID"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
+	}
+
+	request := &deslikePublicationRequest{
+		MID: mid,
 	}
 
 	svc := appl.NewPublicationService()
 	err = svc.DeslikePublication(publicationID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	e := &deslikePublicationResponse{
-		MID: mid,
+		MID: request.MID,
 	}
 
 	response.JSON(w, http.StatusOK, e)

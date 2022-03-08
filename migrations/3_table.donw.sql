@@ -1,1 +1,2 @@
+USE API;
 DROP TABLE IF EXISTS publication;

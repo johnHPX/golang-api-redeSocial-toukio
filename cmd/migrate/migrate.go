@@ -6,9 +6,6 @@ package main
 */
 
 import (
-	"API-RS-TOUKIO/internal/infra/data/pgclient"
-	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 
@@ -30,7 +27,7 @@ func gerarAPP() *cli.App {
 	app.Commands = []cli.Command{
 		{
 			Name:   "migrate",
-			Usage:  "Criar tebelas/deleta tabelas",
+			Usage:  "Criar tebelas/deletar tabelas",
 			Flags:  flag,
 			Action: migration,
 		},
@@ -39,34 +36,8 @@ func gerarAPP() *cli.App {
 	return app
 }
 
-// função que executa o up
+// função que executa o migrate
 func migration(c *cli.Context) {
-	valorPassado := c.String("m")
-
-	content, err := ioutil.ReadFile("migrations/" + valorPassado)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	// Convert []byte to string and print to screen
-	text := string(content)
-	fmt.Println(text)
-
-	db, err := pgclient.Connectar()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Print(">>>>>>>>")
-
-	statement, err := db.Prepare(text)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = statement.Exec()
-
-	fmt.Print("migration executed successfully!")
 
 }
 

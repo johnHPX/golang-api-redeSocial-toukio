@@ -38,14 +38,14 @@ type createUserResponse struct {
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		response.Erro(w, http.StatusUnprocessableEntity, err)
+		response.Err(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	var request createUserRequest
 	err = json.Unmarshal(bodyRequest, &request)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -59,7 +59,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	err = svc.CreateUser(ent)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -92,10 +92,14 @@ type listAllUsersResponse struct {
 func ListAllUsers(w http.ResponseWriter, r *http.Request) {
 	mid := strings.ToLower(r.URL.Query().Get("mid"))
 
+	request := &listAllUsersRequest{
+		MID: mid,
+	}
+
 	svc := appl.NewUserService()
 	list, err := svc.ListALLUser()
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -107,7 +111,7 @@ func ListAllUsers(w http.ResponseWriter, r *http.Request) {
 			Nick:     v.Nick,
 			Email:    v.Email,
 			Password: v.Password,
-			MID:      mid,
+			MID:      request.MID,
 		})
 	}
 
@@ -144,7 +148,7 @@ func ListByNameOrNickUsers(w http.ResponseWriter, r *http.Request) {
 	svc := appl.NewUserService()
 	list, err := svc.ListByNameOrNickUsers(request.NameOrNick)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -186,14 +190,19 @@ func FindUsers(w http.ResponseWriter, r *http.Request) {
 	paraments := mux.Vars(r)
 	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
+	request := &findUsersRequest{
+		ID:  userID,
+		MID: mid,
+	}
+
 	svc := appl.NewUserService()
-	user, err := svc.FindUser(userID)
+	user, err := svc.FindUser(request.ID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -203,7 +212,7 @@ func FindUsers(w http.ResponseWriter, r *http.Request) {
 		Name:  user.Name,
 		Nick:  user.Nick,
 		Email: user.Email,
-		MID:   mid,
+		MID:   request.MID,
 	}
 
 	response.JSON(w, http.StatusAccepted, resp)
@@ -229,21 +238,21 @@ type updateUserResponse struct {
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		response.Erro(w, http.StatusUnprocessableEntity, err)
+		response.Err(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	var request updateUserRequest
 	err = json.Unmarshal(bodyRequest, &request)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
 	paraments := mux.Vars(r)
 	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
@@ -257,11 +266,11 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 
 	err = svc.UpdateUser(ent)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	resp := &createUserResponse{
+	resp := &updateUserResponse{
 		MID: "ok",
 	}
 
@@ -289,19 +298,24 @@ func DeletarUser(w http.ResponseWriter, r *http.Request) {
 	paraments := mux.Vars(r)
 	usuarioId, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
+	request := &deleteUserRequest{
+		ID:  usuarioId,
+		MID: mid,
+	}
+
 	svc := appl.NewUserService()
-	err = svc.DeleteUser(usuarioId)
+	err = svc.DeleteUser(request.ID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	resp := &deleteUserResponse{
-		MID: mid,
+		MID: request.MID,
 	}
 
 	response.JSON(w, http.StatusOK, resp)
@@ -316,50 +330,55 @@ func DeletarUser(w http.ResponseWriter, r *http.Request) {
 type loginUserRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	MID      string `json:"mid"`
 }
 
 type loginUserResponse struct {
+	UserID int64  `json:"userId"`
+	Token  string `json:"token"`
+	MID    string `json:"mid"`
 }
 
 // faz login com um usuario cadastrado
 func LoginUser(w http.ResponseWriter, r *http.Request) {
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		response.Erro(w, http.StatusUnprocessableEntity, err)
+		response.Err(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	var user loginUserRequest
 	err = json.Unmarshal(bodyRequest, &user)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
 	svc := appl.NewUserService()
 	userSalveBase, err := svc.SearchforEmail(user.Email)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	err = appl.CheckPassword(userSalveBase.Password, user.Password)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, err)
+		response.Err(w, http.StatusUnauthorized, err)
 		return
 	}
 
-	token, err := appl.CreateToken(uint64(userSalveBase.ID))
+	token, err := appl.CreateToken(int64(userSalveBase.ID))
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	// resp := &loginUserResponse{
-	// 	Token: []byte(token),
-	// }
+	var responseUser loginUserResponse
+	responseUser.UserID = userSalveBase.ID
+	responseUser.Token = token
+	responseUser.MID = user.MID
 
-	w.Write([]byte(token))
+	response.JSON(w, http.StatusOK, responseUser)
 
 }
 
@@ -382,39 +401,39 @@ func SeguirUser(w http.ResponseWriter, r *http.Request) {
 
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		response.Erro(w, http.StatusUnprocessableEntity, err)
+		response.Err(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	var user seguirUserRequest
 	err = json.Unmarshal(bodyRequest, &user)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
 	paramentros := mux.Vars(r)
 	userID, err := strconv.ParseInt(paramentros["userId"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, err)
+		response.Err(w, http.StatusUnauthorized, err)
 		return
 	}
 
-	follewerID, err := appl.ExtractUsuarioID(r)
+	follewerID, err := appl.ExtractUserID(r)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, err)
+		response.Err(w, http.StatusUnauthorized, err)
 		return
 	}
 
 	if follewerID == userID {
-		response.Erro(w, http.StatusForbidden, errors.New("não é posivel seguir você mesmo"))
+		response.Err(w, http.StatusForbidden, errors.New("não é posivel seguir você mesmo"))
 		return
 	}
 
 	svc := appl.NewUserService()
 	err = svc.FollowUser(userID, follewerID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -444,39 +463,39 @@ func PararSeguirUser(w http.ResponseWriter, r *http.Request) {
 
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		response.Erro(w, http.StatusUnprocessableEntity, err)
+		response.Err(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	var user pararSeguirUserRequest
 	err = json.Unmarshal(bodyRequest, &user)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
 	paramentros := mux.Vars(r)
 	userID, err := strconv.ParseInt(paramentros["userId"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, err)
+		response.Err(w, http.StatusUnauthorized, err)
 		return
 	}
 
-	follewerID, err := appl.ExtractUsuarioID(r)
+	follewerID, err := appl.ExtractUserID(r)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, err)
+		response.Err(w, http.StatusUnauthorized, err)
 		return
 	}
 
 	if follewerID == userID {
-		response.Erro(w, http.StatusForbidden, errors.New("não é posivel parar de seguir você mesmo"))
+		response.Err(w, http.StatusForbidden, errors.New("não é posivel parar de seguir você mesmo"))
 		return
 	}
 
 	svc := appl.NewUserService()
 	err = svc.StopFollowing(userID, follewerID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -494,6 +513,7 @@ func PararSeguirUser(w http.ResponseWriter, r *http.Request) {
 */
 
 type listSeguidoresUserRequest struct {
+	ID  int64  `json:"-"`
 	MID string `json:"-"`
 }
 
@@ -512,11 +532,21 @@ func ListSeguidoresUser(w http.ResponseWriter, r *http.Request) {
 	paraments := mux.Vars(r)
 	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
+
+	request := &listSeguidoresUserRequest{
+		ID:  userID,
+		MID: mid,
+	}
+
 	svc := appl.NewUserService()
-	followers, err := svc.SearchFollowers(userID)
+	followers, err := svc.SearchFollowers(request.ID)
+	if err != nil {
+		response.Err(w, http.StatusInternalServerError, err)
+		return
+	}
 
 	result := make([]listSeguidoresUserResponse, 0)
 	for _, v := range followers {
@@ -526,7 +556,7 @@ func ListSeguidoresUser(w http.ResponseWriter, r *http.Request) {
 			Nick:      v.Nick,
 			Email:     v.Email,
 			Create_at: v.Create_at,
-			MID:       mid,
+			MID:       request.MID,
 		})
 	}
 
@@ -540,6 +570,7 @@ func ListSeguidoresUser(w http.ResponseWriter, r *http.Request) {
 */
 
 type listSeguindoUserRequest struct {
+	ID  int64  `json:"-"`
 	MID string `json:"-"`
 }
 
@@ -558,11 +589,21 @@ func ListSeguindoUser(w http.ResponseWriter, r *http.Request) {
 	paraments := mux.Vars(r)
 	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
+
+	request := &listSeguindoUserRequest{
+		ID:  userID,
+		MID: mid,
+	}
+
 	svc := appl.NewUserService()
-	followers, err := svc.SearchFollowing(userID)
+	followers, err := svc.SearchFollowing(request.ID)
+	if err != nil {
+		response.Err(w, http.StatusInternalServerError, err)
+		return
+	}
 
 	result := make([]listSeguindoUserResponse, 0)
 	for _, v := range followers {
@@ -572,7 +613,7 @@ func ListSeguindoUser(w http.ResponseWriter, r *http.Request) {
 			Nick:      v.Nick,
 			Email:     v.Email,
 			Create_at: v.Create_at,
-			MID:       mid,
+			MID:       request.MID,
 		})
 	}
 
@@ -599,27 +640,27 @@ type updatepasswordUserResponse struct {
 func UpdatePasswordUser(w http.ResponseWriter, r *http.Request) {
 	bodyRequest, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		response.Erro(w, http.StatusUnprocessableEntity, err)
+		response.Err(w, http.StatusUnprocessableEntity, err)
 		return
 	}
 
 	var password updatepasswordUserRequest
 	err = json.Unmarshal(bodyRequest, &password)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
 	paraments := mux.Vars(r)
 	userID, err := strconv.ParseInt(paraments["userId"], 10, 64)
 	if err != nil {
-		response.Erro(w, http.StatusBadRequest, err)
+		response.Err(w, http.StatusBadRequest, err)
 		return
 	}
 
-	userIDToken, err := appl.ExtractUsuarioID(r)
+	userIDToken, err := appl.ExtractUserID(r)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, err)
+		response.Err(w, http.StatusUnauthorized, err)
 		return
 	}
 
@@ -627,35 +668,32 @@ func UpdatePasswordUser(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(userIDToken)
 
 	if userID != userIDToken {
-		response.Erro(w, http.StatusForbidden, errors.New("Não é possivel atualizar uma senha o que não é o sua"))
+		response.Err(w, http.StatusForbidden, errors.New("não é possivel atualizar uma senha o que não é o sua"))
 		return
 	}
 
 	svc := appl.NewUserService()
 	passwordSalveBD, err := svc.SearchPassword(userID)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
-	fmt.Println("Atual: ->", password.CurrentPassword)
-	fmt.Println("SenhaSalvaNoBanco ->", passwordSalveBD)
-
 	err = appl.CheckPassword(passwordSalveBD, password.CurrentPassword)
 	if err != nil {
-		response.Erro(w, http.StatusUnauthorized, errors.New("a senha atual não condiz com aque está salva no banco"))
+		response.Err(w, http.StatusUnauthorized, errors.New("a senha atual não condiz com aque está salva no banco"))
 		return
 	}
 
 	passwordWithHash, err := appl.Hash(password.NewPassword)
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
 	err = svc.UpdatePassword(userID, string(passwordWithHash))
 	if err != nil {
-		response.Erro(w, http.StatusInternalServerError, err)
+		response.Err(w, http.StatusInternalServerError, err)
 		return
 	}
 
